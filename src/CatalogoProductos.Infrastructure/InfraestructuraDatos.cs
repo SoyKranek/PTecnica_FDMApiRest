@@ -126,7 +126,8 @@ namespace CatalogoProductos.Infrastructure
     {
         public static IServiceCollection AgregarInfraestructura(this IServiceCollection services, IConfiguration configuration)
         {
-            var cadenaConexion = configuration.GetConnectionString("DefaultConnection")
+            var cadenaConexion = configuration.GetConnectionString("PostgreSQL")
+                ?? configuration.GetConnectionString("DefaultConnection")
                 ?? "Host=localhost;Database=catalogoproductos;Username=postgres;Password=postgres";
 
             services.AddDbContext<ContextoAplicacion>(options => options.UseNpgsql(cadenaConexion));
