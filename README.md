@@ -1,43 +1,66 @@
-# API REST Catálogo de Productos
+# API REST - Catálogo de Productos
 
-API REST construida con .NET 10 para la gestión de productos y control de inventario, implementando Clean Architecture y patrón Repository.
+## Descripción del Proyecto
+
+API REST desarrollada en .NET 10 para la gestión de un catálogo de productos con control de inventario. Implementa Clean Architecture y el patrón Repository, proporcionando endpoints RESTful para operaciones CRUD completas y ajuste de stock.
+
+### Problema Resuelto
+
+El sistema resuelve la necesidad de gestionar un catálogo de productos con las siguientes capacidades:
+
+- **Gestión de Productos**: Crear, consultar, actualizar y eliminar productos del catálogo
+- **Control de Inventario**: Ajuste de stock con trazabilidad de movimientos
+- **Consultas Paginadas**: Listado eficiente de productos con paginación
+- **Validaciones Robustas**: Protección contra inputs maliciosos y validación de reglas de negocio
+- **Manejo de Errores**: Respuestas HTTP estandarizadas con códigos específicos y mensajes descriptivos
+
+---
 
 ## Arquitectura
 
-Este proyecto implementa Clean Architecture con cuatro capas claramente separadas:
+### Clean Architecture
+
+El proyecto implementa Clean Architecture con separación de responsabilidades en 4 capas:
 
 ```
-├── CatalogoProductos.Domain/          # Entidades de dominio, interfaces, excepciones
-├── CatalogoProductos.Application/      # Casos de uso, DTOs, comandos, queries, validadores
-├── CatalogoProductos.Infrastructure/   # Implementación EF Core, repositorios, configuración BD
-└── CatalogoProductos.API/              # Controllers, middleware, configuración API
+src/
+├── CatalogoProductos.Domain/          # Capa de Dominio
+│   └── Entidades, Interfaces, Excepciones de negocio
+├── CatalogoProductos.Application/     # Capa de Aplicación
+│   └── DTOs, Comandos CQRS, Validadores, Servicios
+├── CatalogoProductos.Infrastructure/  # Capa de Infraestructura
+│   └── EF Core, Repositorios, Configuración de BD
+└── CatalogoProductos.API/             # Capa de Presentación
+    └── Controllers, Middleware, Configuración
 ```
 
-### Flujo de Dependencias
+### Tecnologías Utilizadas
 
-```
-API → Application → Domain ← Infrastructure
-```
+- **.NET 10**: Framework principal
+- **ASP.NET Core Web API**: Para construcción de la API REST
+- **Entity Framework Core 10**: ORM para acceso a datos
+- **PostgreSQL**: Base de datos relacional (Supabase)
+- **FluentValidation**: Validación de DTOs
+- **AutoMapper**: Mapeo entre entidades y DTOs
+- **Swagger/OpenAPI**: Documentación interactiva de la API
+- **xUnit**: Framework de testing
+- **Docker**: Containerización para despliegue
+- **Railway**: Plataforma de hosting cloud
 
-El dominio no depende de ninguna otra capa, manteniendo la lógica de negocio aislada.
-
-## Stack Tecnológico
-
-- **.NET 10** - Runtime y SDK
-- **ASP.NET Core** - Framework Web API
-- **Entity Framework Core 10** - ORM para acceso a datos
-- **PostgreSQL** - Base de datos relacional (Supabase)
-- **FluentValidation** - Validación de entrada
-- **AutoMapper** - Mapeo entre entidades y DTOs
-- **Swashbuckle** - Documentación OpenAPI/Swagger
+---
 
 ## Requisitos Previos
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [PostgreSQL](https://www.postgresql.org/) (local) o cuenta en [Supabase](https://supabase.com/)
-- [Docker](https://www.docker.com/) (opcional, para contenedorización)
+Para ejecutar este proyecto localmente necesitas:
 
-## Instalación Local
+- [.NET SDK 10.0](https://dotnet.microsoft.com/download/dotnet/10.0) o superior
+- [PostgreSQL 14+](https://www.postgresql.org/download/) o acceso a Supabase
+- [Git](https://git-scm.com/downloads)
+- Un IDE compatible (.NET SDK, Visual Studio, VS Code, Rider)
+
+---
+
+## Instalación y Ejecución
 
 ### 1. Clonar el Repositorio
 
@@ -46,44 +69,88 @@ git clone https://github.com/SoyKranek/PTecnica_FDMApiRest.git
 cd PTecnica_FDMApiRest
 ```
 
-### 2. Configurar Cadena de Conexión
+### 2. Configurar la Base de Datos
 
-Editar `src/CatalogoProductos.API/appsettings.Development.json`:
+#### Opción A: Usar Supabase (Recomendado)
+
+1. Crear un proyecto en [Supabase](https://supabase.com)
+2. En el SQL Editor, ejecutar:
+
+```sql
+-- Crear tabla
+CREATE TABLE productos (
+    id_producto UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(18,2) NOT NULL CHECK (precio >= 0),
+    cantidad_stock INTEGER NOT NULL CHECK (cantidad_stock >= 0),
+    categoria VARCHAR(100) NOT NULL,
+    url_imagen VARCHAR(500),
+    codigo_sku VARCHAR(50) NOT NULL UNIQUE,
+    esta_activo BOOLEAN NOT NULL DEFAULT true,
+    fecha_creacion TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_productos_categoria ON productos(categoria);
+CREATE INDEX idx_productos_esta_activo ON productos(esta_activo);
+```
+
+3. Obtener la cadena de conexión (Connection Pooling):
+   - Settings → Database → Connection string → Transaction Mode
+
+#### Opción B: PostgreSQL Local
+
+```bash
+# Crear base de datos
+createdb catalogoproductos
+
+# Ejecutar scripts
+psql -d catalogoproductos -f database/schema.sql
+psql -d catalogoproductos -f database/seed-data.sql
+```
+
+### 3. Configurar Variables de Entorno
+
+Editar `src/CatalogoProductos.API/appsettings.json`:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=catalogoproductos;Username=postgres;Password=tu_password"
+    "PostgreSQL": "Tu-cadena-de-conexión-aquí"
   }
 }
 ```
 
-### 3. Crear Base de Datos
-
-Ejecutar el script SQL incluido o crear la base de datos manualmente:
-
-```sql
-CREATE DATABASE catalogoproductos;
-```
-
-Aplicar migraciones:
+O usar variable de entorno:
 
 ```bash
-dotnet ef database update --project src/CatalogoProductos.Infrastructure --startup-project src/CatalogoProductos.API
+# Linux/Mac
+export DATABASE_URL="postgresql://user:password@host:port/database"
+
+# Windows PowerShell
+$env:DATABASE_URL="postgresql://user:password@host:port/database"
 ```
 
-### 4. Compilar y Ejecutar
+### 4. Restaurar Dependencias y Compilar
 
 ```bash
+dotnet restore
 dotnet build
-dotnet run --project src/CatalogoProductos.API
 ```
 
-La API estará disponible en `https://localhost:7013` y `http://localhost:5002`
+### 5. Ejecutar la API
 
-### 5. Acceder a Swagger
+```bash
+cd src/CatalogoProductos.API
+dotnet run
+```
 
-Abrir en el navegador: `https://localhost:7013/swagger`
+La API estará disponible en:
+- **HTTP**: `http://localhost:5000`
+- **Swagger**: `http://localhost:5000/swagger`
+
+---
 
 ## Endpoints Disponibles
 
@@ -91,68 +158,115 @@ Abrir en el navegador: `https://localhost:7013/swagger`
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/v1/productos` | Obtener lista paginada de productos |
+| GET | `/api/v1/productos` | Listar productos paginados |
 | GET | `/api/v1/productos/{id}` | Obtener producto por ID |
 | POST | `/api/v1/productos` | Crear nuevo producto |
-| PUT | `/api/v1/productos/{id}` | Actualizar producto existente |
+| PUT | `/api/v1/productos/{id}` | Actualizar producto |
 | DELETE | `/api/v1/productos/{id}` | Eliminar producto (soft delete) |
 
 ### Stock
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| POST | `/api/v1/productos/{id}/stock/ajustar` | Ajustar inventario de producto |
+| POST | `/api/v1/productos/{id}/stock/ajustar` | Ajustar stock del producto |
 
 ### Health Check
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/health` | Estado de salud de la API |
+| GET | `/health` | Verificar estado de la API |
+
+---
 
 ## Ejemplos de Uso
+
+### Listar Productos (Paginado)
+
+```bash
+curl -X GET "http://localhost:5000/api/v1/productos?pagina=1&tamano=10"
+```
+
+**Respuesta:**
+```json
+{
+  "elementos": [...],
+  "numeroPagina": 1,
+  "tamanoPagina": 10,
+  "totalRegistros": 15
+}
+```
 
 ### Crear Producto
 
 ```bash
-curl -X POST https://localhost:7013/api/v1/productos \
+curl -X POST "http://localhost:5000/api/v1/productos" \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "Laptop HP Pavilion",
-    "descripcion": "Laptop profesional con procesador Intel i7",
-    "precio": 2500000.00,
-    "cantidadStock": 15,
+    "descripcion": "Laptop profesional 16GB RAM",
+    "precio": 2500000,
+    "cantidadStock": 10,
     "categoria": "Tecnología",
     "urlImagen": "https://example.com/laptop.jpg",
     "codigoSKU": "LAP-HP-001"
   }'
 ```
 
-### Obtener Productos Paginados
-
-```bash
-curl -X GET "https://localhost:7013/api/v1/productos?pagina=1&tamano=10"
-```
-
 ### Ajustar Stock
 
 ```bash
-curl -X POST https://localhost:7013/api/v1/productos/{id}/stock/ajustar \
+curl -X POST "http://localhost:5000/api/v1/productos/{id}/stock/ajustar" \
   -H "Content-Type: application/json" \
   -d '{
-    "cantidadAjuste": -5
+    "cantidadAjuste": -5,
+    "motivo": "Venta realizada"
   }'
 ```
 
+---
+
 ## Códigos de Respuesta HTTP
 
-| Código | Significado |
-|--------|-------------|
-| 200 OK | Consulta o actualización exitosa |
-| 201 CREATED | Recurso creado exitosamente |
-| 204 NO CONTENT | Eliminación exitosa |
-| 400 BAD REQUEST | Error de validación o regla de negocio |
-| 404 NOT FOUND | Recurso no encontrado |
-| 500 INTERNAL SERVER ERROR | Error interno del servidor |
+| Código | Significado | Uso |
+|--------|-------------|-----|
+| 200 | OK | Operación exitosa |
+| 201 | Created | Recurso creado |
+| 204 | No Content | Eliminación exitosa |
+| 400 | Bad Request | Datos inválidos |
+| 404 | Not Found | Recurso no encontrado |
+| 409 | Conflict | SKU duplicado |
+| 422 | Unprocessable Entity | Regla de negocio violada |
+| 500 | Internal Server Error | Error del servidor |
+
+---
+
+## Testing
+
+El proyecto incluye una suite completa de tests de seguridad y validación.
+
+### Ejecutar Tests
+
+```bash
+# Todos los tests
+dotnet test
+
+# Tests específicos
+dotnet test tests/CatalogoProductos.Application.Tests/
+
+# Con detalles
+dotnet test --logger "console;verbosity=detailed"
+```
+
+### Cobertura de Tests
+
+- **57 tests automatizados**
+- Validación contra inyección SQL, XSS, buffer overflow
+- Tests de reglas de negocio del dominio
+- Tests de valores extremos y casos límite
+
+Ver documentación completa en: `TESTS_SEGURIDAD.md`
+
+---
 
 ## Despliegue con Docker
 
@@ -165,82 +279,132 @@ docker build -t catalogo-productos-api .
 ### Ejecutar Contenedor
 
 ```bash
-docker run -d -p 8080:8080 \
-  -e ConnectionStrings__DefaultConnection="Host=tu-host;Database=catalogoproductos;Username=user;Password=pass" \
+docker run -d \
+  -p 8080:8080 \
+  -e DATABASE_URL="postgresql://..." \
+  --name api-productos \
   catalogo-productos-api
 ```
 
+---
+
 ## Despliegue en Railway
 
-### 1. Conectar Repositorio
+1. Conectar repositorio de GitHub con Railway
+2. Configurar variable de entorno: `DATABASE_URL`
+3. Railway detectará automáticamente el Dockerfile
+4. El deploy se realizará automáticamente
 
-Crear un nuevo proyecto en [Railway](https://railway.app/) y conectar el repositorio de GitHub.
+**URL Pública**: https://ptecnicafdmapirest-production.up.railway.app
 
-### 2. Configurar Variables de Entorno
+---
 
-En el dashboard de Railway, agregar:
-
-```
-ConnectionStrings__DefaultConnection=Host=tu-supabase-host;Database=postgres;Username=postgres;Password=tu-password
-ASPNETCORE_ENVIRONMENT=Production
-```
-
-### 3. Configurar Health Check
-
-Endpoint: `/health`
-
-### 4. Desplegar
-
-Railway detectará automáticamente el Dockerfile y desplegará la aplicación.
-
-## Variables de Entorno
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `ConnectionStrings__DefaultConnection` | Cadena de conexión a PostgreSQL | `Host=localhost;Database=catalogoproductos;...` |
-| `ASPNETCORE_ENVIRONMENT` | Entorno de ejecución | `Development`, `Production` |
-
-## Convenciones de Código
-
-- **Variables/Propiedades**: Español, descriptivas (`cantidadStock`, `nombreProducto`)
-- **Contratos API**: camelCase en JSON
-- **Clases/Métodos**: PascalCase
-- **Nombres de métodos**: Verbos descriptivos (`ObtenerProductoPorId`, `AjustarStock`)
-
-## Estructura de Proyecto
+## Estructura del Proyecto
 
 ```
 .
 ├── src/
 │   ├── CatalogoProductos.API/
-│   │   ├── Controllers/
-│   │   ├── Middleware/
-│   │   └── Program.cs
+│   │   ├── Controllers/           # Endpoints REST
+│   │   ├── Middleware/           # Manejo de excepciones
+│   │   ├── Models/              # Modelos de respuesta
+│   │   └── Program.cs           # Configuración de la aplicación
 │   ├── CatalogoProductos.Application/
-│   │   ├── Comandos/
-│   │   ├── Consultas/
-│   │   ├── Contratos/
-│   │   ├── Servicios/
-│   │   └── Validadores/
+│   │   ├── Comandos/           # CQRS Commands
+│   │   ├── Consultas/          # CQRS Queries
+│   │   ├── Contratos/          # DTOs
+│   │   ├── Servicios/          # Lógica de aplicación
+│   │   └── Validadores/        # FluentValidation
 │   ├── CatalogoProductos.Domain/
-│   │   ├── Entidades/
-│   │   ├── Excepciones/
-│   │   └── Interfaces/
+│   │   ├── Entidades/          # Entidades de dominio
+│   │   ├── Excepciones/        # Excepciones de negocio
+│   │   └── Interfaces/         # Contratos de repositorios
 │   └── CatalogoProductos.Infrastructure/
-│       ├── Datos/
-│       └── Repositorios/
+│       ├── Datos/              # DbContext, Configuraciones EF
+│       └── Repositorios/       # Implementaciones de repositorios
 ├── tests/
-│   ├── CatalogoProductos.Domain.Tests/
-│   ├── CatalogoProductos.Application.Tests/
-│   └── CatalogoProductos.Infrastructure.Tests/
-├── Dockerfile
-└── README.md
+│   └── CatalogoProductos.Application.Tests/
+│       ├── TestsValidacionMaliciosa.cs
+│       └── TestsDominioProducto.cs
+├── database/
+│   ├── schema.sql             # Estructura de BD
+│   └── seed-data.sql          # Datos de prueba
+├── Dockerfile                 # Configuración Docker
+└── README.md                 # Este archivo
 ```
+
+---
+
+## Convenciones del Código
+
+### Nomenclatura
+
+- **Variables y métodos**: Español descriptivo (`ObtenerProductoPorId`)
+- **Contratos JSON**: camelCase (`idProducto`, `nombreProducto`)
+- **Clases**: PascalCase (`ProductoResponse`, `ServicioGestionProductos`)
+- **Interfaces**: Prefijo `I` (`IRepositorioProducto`)
+
+### Validaciones
+
+- Nombres: 1-200 caracteres
+- Descripción: 1-2000 caracteres
+- Precio: 0.01 - 9,999,999.99
+- Stock: 0 - 999,999
+- SKU: Alfanumérico con guiones, 3-50 caracteres
+- URL Imágenes: Solo http:// o https://
+
+---
+
+## Patrones y Principios Aplicados
+
+- **Clean Architecture**: Separación de responsabilidades por capas
+- **Repository Pattern**: Abstracción del acceso a datos
+- **CQRS**: Separación de comandos y consultas
+- **Dependency Injection**: Inversión de dependencias
+- **SOLID Principles**: Código mantenible y escalable
+- **Fail-Fast Validation**: Validación temprana de inputs
+
+---
+
+## Seguridad
+
+La API implementa múltiples capas de seguridad:
+
+✅ **Validación de entrada**: FluentValidation con reglas estrictas  
+✅ **Protección contra SQL Injection**: Entity Framework con queries parametrizadas  
+✅ **Validación de caracteres**: Bloqueo de caracteres peligrosos (<, >, ;, --, etc.)  
+✅ **Límites de tamaño**: Prevención de buffer overflow  
+✅ **Validación de URLs**: Solo http/https permitidos  
+✅ **Manejo de errores**: Sin exposición de stack traces en producción  
+
+---
+
+## Troubleshooting
+
+### Error: "Connection refused"
+
+Verificar que PostgreSQL esté corriendo y la cadena de conexión sea correcta.
+
+### Error: "Assembly not found"
+
+Ejecutar `dotnet restore` y `dotnet build`.
+
+### Error: "Port already in use"
+
+Cambiar el puerto en `launchSettings.json` o usar variable de entorno `ASPNETCORE_URLS`.
+
+### Tests fallan
+
+Verificar que las dependencias de test estén instaladas: `dotnet restore tests/`
+
+---
 
 ## Licencia
 
-Este proyecto fue desarrollado como parte de una prueba técnica para Fundación de la Mujer.
+Este proyecto fue desarrollado como prueba técnica para Fundación de la Mujer.
+
+---
 
 ## Contacto
 
-Para consultas sobre este proyecto, contactar al desarrollador asignado.
+Para preguntas o soporte técnico sobre este proyecto, contactar al equipo de desarrollo.

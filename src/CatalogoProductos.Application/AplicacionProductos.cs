@@ -29,6 +29,7 @@ namespace CatalogoProductos.Application.Contratos
     public class AjustarStockRequest
     {
         public int CantidadAjuste { get; set; }
+        public string Motivo { get; set; } = string.Empty;
     }
 
     public class ProductoResponse
@@ -79,13 +80,48 @@ namespace CatalogoProductos.Application.Validadores
     {
         public CrearProductoRequestValidator()
         {
-            RuleFor(x => x.Nombre).NotEmpty().MaximumLength(200);
-            RuleFor(x => x.Descripcion).NotEmpty().MaximumLength(2000);
-            RuleFor(x => x.Precio).GreaterThan(0);
-            RuleFor(x => x.CantidadStock).GreaterThanOrEqualTo(0);
-            RuleFor(x => x.Categoria).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.UrlImagen).MaximumLength(500);
-            RuleFor(x => x.CodigoSKU).NotEmpty().Matches("^[A-Za-z0-9-]{3,50}$");
+            RuleFor(x => x.Nombre)
+                .NotEmpty().WithMessage("El nombre es obligatorio.")
+                .MaximumLength(200).WithMessage("El nombre no puede exceder 200 caracteres.")
+                .Must(NoContenerCaracteresEspeciales).WithMessage("El nombre no puede contener caracteres especiales peligrosos.");
+
+            RuleFor(x => x.Descripcion)
+                .NotEmpty().WithMessage("La descripción es obligatoria.")
+                .MaximumLength(2000).WithMessage("La descripción no puede exceder 2000 caracteres.");
+
+            RuleFor(x => x.Precio)
+                .GreaterThan(0).WithMessage("El precio debe ser mayor a cero.")
+                .LessThan(10000000).WithMessage("El precio no puede exceder 10,000,000.");
+
+            RuleFor(x => x.CantidadStock)
+                .GreaterThanOrEqualTo(0).WithMessage("La cantidad de stock no puede ser negativa.")
+                .LessThan(1000000).WithMessage("La cantidad de stock no puede exceder 1,000,000.");
+
+            RuleFor(x => x.Categoria)
+                .NotEmpty().WithMessage("La categoría es obligatoria.")
+                .MaximumLength(100).WithMessage("La categoría no puede exceder 100 caracteres.");
+
+            RuleFor(x => x.UrlImagen)
+                .MaximumLength(500).WithMessage("La URL de la imagen no puede exceder 500 caracteres.")
+                .Must(SerUrlSegura).WithMessage("La URL de la imagen debe comenzar con http:// o https://.");
+
+            RuleFor(x => x.CodigoSKU)
+                .NotEmpty().WithMessage("El código SKU es obligatorio.")
+                .Matches("^[A-Za-z0-9-]{3,50}$").WithMessage("El código SKU solo puede contener letras, números y guiones, entre 3 y 50 caracteres.");
+        }
+
+        private bool NoContenerCaracteresEspeciales(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return false;
+            var caracteresProhibidos = new[] { "<", ">", ";", "--", "/*", "*/", "xp_", "sp_", "DROP", "DELETE", "INSERT", "UPDATE", "EXEC", "EXECUTE" };
+            return !caracteresProhibidos.Any(c => texto.Contains(c, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool SerUrlSegura(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return true; // Permitir vacío si no es obligatorio
+            return url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                   url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -93,11 +129,24 @@ namespace CatalogoProductos.Application.Validadores
     {
         public ActualizarProductoRequestValidator()
         {
-            RuleFor(x => x.Nombre).NotEmpty().MaximumLength(200);
-            RuleFor(x => x.Descripcion).NotEmpty().MaximumLength(2000);
-            RuleFor(x => x.Precio).GreaterThan(0);
-            RuleFor(x => x.Categoria).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.UrlImagen).MaximumLength(500);
+            RuleFor(x => x.Nombre)
+                .NotEmpty().WithMessage("El nombre es obligatorio.")
+                .MaximumLength(200).WithMessage("El nombre no puede exceder 200 caracteres.");
+
+            RuleFor(x => x.Descripcion)
+                .NotEmpty().WithMessage("La descripción es obligatoria.")
+                .MaximumLength(2000).WithMessage("La descripción no puede exceder 2000 caracteres.");
+
+            RuleFor(x => x.Precio)
+                .GreaterThan(0).WithMessage("El precio debe ser mayor a cero.")
+                .LessThan(10000000).WithMessage("El precio no puede exceder 10,000,000.");
+
+            RuleFor(x => x.Categoria)
+                .NotEmpty().WithMessage("La categoría es obligatoria.")
+                .MaximumLength(100).WithMessage("La categoría no puede exceder 100 caracteres.");
+
+            RuleFor(x => x.UrlImagen)
+                .MaximumLength(500).WithMessage("La URL de la imagen no puede exceder 500 caracteres.");
         }
     }
 
@@ -105,7 +154,14 @@ namespace CatalogoProductos.Application.Validadores
     {
         public AjustarStockRequestValidator()
         {
-            RuleFor(x => x.CantidadAjuste).NotEqual(0);
+            RuleFor(x => x.CantidadAjuste)
+                .NotEqual(0).WithMessage("El ajuste no puede ser cero.")
+                .GreaterThan(-1000000).WithMessage("El ajuste no puede ser menor a -1,000,000.")
+                .LessThan(1000000).WithMessage("El ajuste no puede exceder 1,000,000.");
+
+            RuleFor(x => x.Motivo)
+                .NotEmpty().WithMessage("El motivo del ajuste es obligatorio.")
+                .MaximumLength(500).WithMessage("El motivo no puede exceder 500 caracteres.");
         }
     }
 }
