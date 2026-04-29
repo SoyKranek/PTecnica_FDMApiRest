@@ -153,7 +153,7 @@ namespace CatalogoProductos.Application.Servicios
 
             if (await _repositorioProducto.ExistePorCodigoSkuAsync(comando.Solicitud.CodigoSKU, cancellationToken))
             {
-                throw new ReglaNegocioException("Ya existe un producto con el mismo codigoSKU.");
+                throw new SkuDuplicadoException(comando.Solicitud.CodigoSKU);
             }
 
             var producto = new Producto(

@@ -9,7 +9,24 @@ builder.Services.AddControllers().AddJsonOptions(opciones =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opciones =>
+{
+    opciones.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "API Catálogo de Productos",
+        Version = "v1",
+        Description = "API REST para gestión de catálogo de productos y control de inventario",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Equipo de Desarrollo",
+            Email = "soporte@catalogoproductos.com"
+        }
+    });
+
+    var archivoXml = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var rutaXml = Path.Combine(AppContext.BaseDirectory, archivoXml);
+    opciones.IncludeXmlComments(rutaXml);
+});
 
 builder.Services.AddAutoMapper(config => config.AddProfile<MapeoProductoProfile>());
 builder.Services.AgregarInfraestructura(builder.Configuration);

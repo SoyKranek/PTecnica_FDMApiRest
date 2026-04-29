@@ -154,4 +154,12 @@ public sealed class StockInsuficienteException : ReglaNegocioException
     {
     }
 }
+
+public sealed class SkuDuplicadoException : ReglaNegocioException
+{
+    public SkuDuplicadoException(string codigoSku)
+        : base($"Ya existe un producto con el código SKU '{codigoSku}'.")
+    {
+    }
+}
 }
