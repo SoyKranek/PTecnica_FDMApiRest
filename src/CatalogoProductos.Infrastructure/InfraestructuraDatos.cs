@@ -126,10 +126,20 @@ namespace CatalogoProductos.Infrastructure
     {
         public static IServiceCollection AgregarInfraestructura(this IServiceCollection services, IConfiguration configuration)
         {
-            var cadenaConexion = configuration["DATABASE_URL"]
-                ?? configuration.GetConnectionString("PostgreSQL")
-                ?? configuration.GetConnectionString("DefaultConnection")
+            var databaseUrl = configuration["DATABASE_URL"];
+            var postgresConnection = configuration.GetConnectionString("PostgreSQL");
+            var defaultConnection = configuration.GetConnectionString("DefaultConnection");
+            
+            Console.WriteLine($"DATABASE_URL presente: {!string.IsNullOrEmpty(databaseUrl)}");
+            Console.WriteLine($"PostgreSQL presente: {!string.IsNullOrEmpty(postgresConnection)}");
+            Console.WriteLine($"DefaultConnection presente: {!string.IsNullOrEmpty(defaultConnection)}");
+            
+            var cadenaConexion = databaseUrl
+                ?? postgresConnection
+                ?? defaultConnection
                 ?? "Host=localhost;Database=catalogoproductos;Username=postgres;Password=postgres";
+            
+            Console.WriteLine($"Cadena de conexión final tiene {cadenaConexion.Length} caracteres");
 
             services.AddDbContext<ContextoAplicacion>(options => options.UseNpgsql(cadenaConexion));
             services.AddScoped<IRepositorioProducto, RepositorioProducto>();
