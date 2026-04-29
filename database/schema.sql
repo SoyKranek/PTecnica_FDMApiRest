@@ -11,8 +11,8 @@ CREATE TABLE productos (
     url_imagen VARCHAR(500),
     codigo_sku VARCHAR(50) NOT NULL UNIQUE,
     esta_activo BOOLEAN NOT NULL DEFAULT true,
-    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP
+    fecha_creacion TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_productos_categoria ON productos(categoria);

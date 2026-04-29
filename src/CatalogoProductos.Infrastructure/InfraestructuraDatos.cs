@@ -43,8 +43,8 @@ namespace CatalogoProductos.Infrastructure.Datos
             builder.Property(x => x.UrlImagen).HasColumnName("url_imagen").HasMaxLength(500);
             builder.Property(x => x.CodigoSKU).HasColumnName("codigo_sku").HasMaxLength(50).IsRequired();
             builder.Property(x => x.EstaActivo).HasColumnName("esta_activo").IsRequired();
-            builder.Property(x => x.FechaCreacion).HasColumnName("fecha_creacion").IsRequired();
-            builder.Property(x => x.FechaActualizacion).HasColumnName("fecha_actualizacion");
+            builder.Property(x => x.FechaCreacion).HasColumnName("fecha_creacion").HasColumnType("timestamp with time zone").IsRequired();
+            builder.Property(x => x.FechaActualizacion).HasColumnName("fecha_actualizacion").HasColumnType("timestamp with time zone");
             builder.HasIndex(x => x.CodigoSKU).IsUnique();
             builder.HasIndex(x => x.Categoria);
             builder.HasIndex(x => x.EstaActivo);
