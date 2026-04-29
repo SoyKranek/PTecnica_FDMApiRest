@@ -1,0 +1,44 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.log
+.vs/
+.vscode/
+*.userprefs
+*.pidb
+*.sln.ide
+
+## Entity Framework
+Migrations/
+
+## Logs
+logs/
+*.log
+
+## OS
+.DS_Store
+Thumbs.db
+
+## IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+## Environment
+appsettings.Development.json
+appsettings.Production.json
+.env
+*.env
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
