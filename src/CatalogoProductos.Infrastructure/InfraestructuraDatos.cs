@@ -130,16 +130,16 @@ namespace CatalogoProductos.Infrastructure
             var postgresConnection = configuration.GetConnectionString("PostgreSQL");
             var defaultConnection = configuration.GetConnectionString("DefaultConnection");
             
-            Console.WriteLine($"DATABASE_URL presente: {!string.IsNullOrEmpty(databaseUrl)}");
-            Console.WriteLine($"PostgreSQL presente: {!string.IsNullOrEmpty(postgresConnection)}");
-            Console.WriteLine($"DefaultConnection presente: {!string.IsNullOrEmpty(defaultConnection)}");
-            
             var cadenaConexion = databaseUrl
                 ?? postgresConnection
                 ?? defaultConnection
                 ?? "Host=localhost;Database=catalogoproductos;Username=postgres;Password=postgres";
             
-            Console.WriteLine($"Cadena de conexión final tiene {cadenaConexion.Length} caracteres");
+            // Convertir formato URI (postgresql://...) al formato de cadena de conexión estándar
+            if (cadenaConexion.StartsWith("postgresql://") || cadenaConexion.StartsWith("postgres://"))
+            {
+                cadenaConexion = ConvertirUriAConnectionString(cadenaConexion);
+            }
 
             services.AddDbContext<ContextoAplicacion>(options => options.UseNpgsql(cadenaConexion));
             services.AddScoped<IRepositorioProducto, RepositorioProducto>();
@@ -148,6 +148,19 @@ namespace CatalogoProductos.Infrastructure
             services.AddScoped<IServicioGestionStock, ServicioGestionStock>();
 
             return services;
+        }
+
+        private static string ConvertirUriAConnectionString(string databaseUri)
+        {
+            var uri = new Uri(databaseUri);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : string.Empty;
+            var host = uri.Host;
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.TrimStart('/');
+
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
         }
     }
 }
